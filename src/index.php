@@ -28,7 +28,7 @@ if(array_key_exists('document',$_POST)) {
     if($format != "xml" && $format != "turtle") {
         $format = "xml";
     }
-    $cmd = "python " . getcwd() . "/lemon-validator.py -f$format -ohtml $temp";
+    $cmd = "python " . getcwd() . "/ontolex-validator.py -f$format -ohtml $temp";
     $descriptorspec = array(
         0 => array("pipe", "r"),
         1 => array("pipe", "w"),
@@ -43,7 +43,7 @@ if(array_key_exists('document',$_POST)) {
         $content = stream_get_contents($pipes[1]);
         $errs = stream_get_contents($pipes[2]);
 ?>
-<h1>Lemon Validator</h1>
+<h1>OntoLex-Lemon Validator</h1>
 <h3>You submitted</h3>
 <button value="Show/Hide" onclick="javascript:$('#code').toggle();">Show/Hide</button>
 <div id="code" style="display:none;">
@@ -68,7 +68,7 @@ if(array_key_exists('document',$_POST)) {
 
 } else {
 ?>
-<h1>Lemon Validator</h1>
+<h1>OntoLex-Lemon Validator</h1>
 
 
 Enter your lexicon here:
@@ -76,14 +76,21 @@ Enter your lexicon here:
   <input type="radio" name="format" value="xml" checked>RDF/XML</input>
   <input type="radio" name="format" value="turtle">Turtle/N-Triples</input><br/>
   <textarea class="code-textarea" name="document">
-<rdf:RDF xmlns:lemon="http://lemon-model.net/lemon#"
+<rdf:RDF xmlns:ontolex="http://www.w3.org/ns/lemon/ontolex#"
          xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <ontolex:LexicalEntry rdf:id="test">
+        <ontolex:canonicalForm>
+            <ontolex:Form>
+                <ontolex:writtenRep xml:lang="en">foo</ontolex:writtenRep>
+            </ontolex:Form>
+        </ontolex:canonicalForm>
+    </ontolex:LexicalEntry>
 </rdf:RDF>
 </textarea><br/>
   <input type="submit" name="submit" value="Validate"/>
 </form>
 
-<p><a href="lemon-validator.py">Download validator</a></p>
+<p><a href="ontolex-validator.py">Download validator</a></p>
 <?php
 }
 ?>

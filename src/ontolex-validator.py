@@ -6,6 +6,10 @@ import re
 from rdflib import *
 from rdflib.namespace import RDF, RDFS, OWL
 from xml.sax.saxutils import escape
+import logging
+
+logger = logging.getLogger("rdflib.term")
+logger.disabled = True
 
 suspicious = 0
 minor = 0
