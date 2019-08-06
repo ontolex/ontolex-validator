@@ -49,41 +49,37 @@ lexicon:cat_canonicalForm ontolex:writtenRep &quot;cat&quot;@eng</code></pre>
 <p>A lexicon is not annotated with a language</p>
 <h3 id="example-3">Example</h3>
 <pre><code>:lexicon lime:language &quot;eng&quot;</code></pre>
-<h2 id="mt_no_rule">MT_NO_RULE</h2>
-<p>A morphological transform was given without a rule</p>
-<h2 id="mt_no_prototype">MT_NO_PROTOTYPE</h2>
-<p>A morphological transform does not have a prototype to generate</p>
 <h2 id="bool_bad_value">BOOL_BAD_VALUE</h2>
 <p>A boolean value was not one of <code>true</code>,<code>false</code>,<code>1</code> or <code>0</code></p>
 <h2 id="bad_lang">BAD_LANG</h2>
 <p>A language annotation was not a valid code</p>
 <h3 id="example-5">Example</h3>
-<pre><code>lexicon:form lemon:writtenRep &quot;cat&quot;@english</code></pre>
+<pre><code>lexicon:form ontolex:writtenRep &quot;cat&quot;@english</code></pre>
 <p>Should be</p>
-<pre><code>lexicon:form lemon:writtenRep &quot;cat&quot;@eng</code></pre>
+<pre><code>lexicon:form ontolex:writtenRep &quot;cat&quot;@eng</code></pre>
 <h2 id="bad_rule">BAD_RULE</h2>
 <p>A rule specified in a morphological transform was not valid. In particular the rule must contain the character &quot;~&quot; at least once, and a &quot;/&quot; at most once.</p>
 <h2 id="no_lang">NO_LANG</h2>
 <p>A literal was given without a language.</p>
 <h3 id="example-6">Example</h3>
-<pre><code>lexicon:form lemon:writtenRep &quot;cat&quot;</code></pre>
+<pre><code>lexicon:form ontolex:writtenRep &quot;cat&quot;</code></pre>
 <p>Should be</p>
-<pre><code>lexicon:form lemon:writtenRep &quot;cat&quot;@eng</code></pre>
+<pre><code>lexicon:form ontolex:writtenRep &quot;cat&quot;@eng</code></pre>
 <h2 id="not_lemon_uri">NOT_LEMON_URI</h2>
 <p>A URI was used starting with the <em>lemon</em> namespace that was not a valid identifier.</p>
 <h2 id="lang_on_lang">LANG_ON_LANG</h2>
 <p>A language tag identifier was add to a language tag string</p>
 <h3 id="example-7">Example</h3>
-<pre><code>:lexicon lemon:language &quot;eng&quot;@eng</code></pre>
+<pre><code>:lexicon lime:language &quot;eng&quot;@eng</code></pre>
 <p>Should be</p>
-<pre><code>:lexicon lemon:language &quot;eng&quot;</code></pre>
+<pre><code>:lexicon lime:language &quot;eng&quot;</code></pre>
 <h1 id="warnings">Warnings</h1>
 <h2 id="mult_types">MULT_TYPES</h2>
 <p>An element had multiple incompatible types in the model</p>
 <h3 id="example-8">Example</h3>
-<pre><code>lexicon:entry a lemon:LexicalEntry ;
-  lemon:reference &lt;http://www.example.com/ontology#entity&gt; .</code></pre>
-<p>Here the URI is both stated as a <code>lemon:LexicalEntry</code> and inferred to be a <code>lemon:LexicalSense</code> (as it is the subject of a <code>lemon:reference</code> triple</p>
+<pre><code>lexicon:entry a ontolex:LexicalEntry ;
+  ontolex:reference &lt;http://www.example.com/ontology#entity&gt; .</code></pre>
+<p>Here the URI is both stated as a <code>ontolex:LexicalEntry</code> and inferred to be a <code>ontolex:LexicalSense</code> (as it is the subject of a <code>ontolex:reference</code> triple</p>
 <h2 id="sense_many_ref">SENSE_MANY_REF</h2>
 <p>A lexical sense has multiple references, this infers ontological equivalence between each reference URI.</p>
 <h2 id="component_no_elem">COMPONENT_NO_ELEM</h2>
@@ -97,7 +93,7 @@ lexicon:cat_canonicalForm ontolex:writtenRep &quot;cat&quot;@eng</code></pre>
 <h2 id="entry_no_lang">ENTRY_NO_LANG</h2>
 <p>A lexical entry does not have a language marked, it is advised that each lexical entry is marked with a language tag</p>
 <h3 id="example-11">Example</h3>
-<pre><code>lexicon:entry a lemon:LexicalEntry ;
+<pre><code>lexicon:entry a ontolex:LexicalEntry ;
   lime:language &quot;eng&quot; .</code></pre>
 <h2 id="entry_no_rdfs_label">ENTRY_NO_RDFS_LABEL</h2>
 <p>It is recommended for compatibility that a <code>rdfs:label</code> annotation is added to each entry.</p>
