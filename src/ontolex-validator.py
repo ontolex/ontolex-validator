@@ -390,10 +390,6 @@ def validateLanguage(l):
     if not re.match(languageRegex,l):
         err("BAD_LANG","Invalid language code: " + l)
 
-def validateRule(rule):
-    if rule.count("~") != 1 or rule.count("/") > 1:
-        err("BAD_RULE","Invalid rule: " + rule)
-
 def validateText(lit):
     if lit.language is None:
         err("NO_LANG","Language tag missing from literal " + lit)

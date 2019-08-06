@@ -77,13 +77,17 @@ Enter your lexicon here:
   <input type="radio" name="format" value="turtle">Turtle/N-Triples</input><br/>
   <textarea class="code-textarea" name="document">
 <rdf:RDF xmlns:ontolex="http://www.w3.org/ns/lemon/ontolex#"
-         xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-    <ontolex:LexicalEntry rdf:id="test">
+         xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:lime="http://www.w3.org/ns/lemon/lime#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+    <ontolex:LexicalEntry rdf:about="test">
         <ontolex:canonicalForm>
-            <ontolex:Form>
+            <ontolex:Form rdf:about="Form">
                 <ontolex:writtenRep xml:lang="en">foo</ontolex:writtenRep>
             </ontolex:Form>
         </ontolex:canonicalForm>
+        <lime:language>eng</lime:language>
+        <rdfs:label xml:lang="en">foo</rdfs:label>  
     </ontolex:LexicalEntry>
 </rdf:RDF>
 </textarea><br/>
