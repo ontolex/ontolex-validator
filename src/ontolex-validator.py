@@ -441,7 +441,7 @@ def main(argv):
     optlist, args = getopt.getopt(argv[1:],"f:o:")
     optdict = dict(optlist)
     if len(args) != 1:
-        print("Usage:\n\t./lemon-validator.py [-f xml|turtle] [-o txt|xml|html] file:/lemon-file.rdf")
+        print("Usage:\n\t./ontolex-validator.py [-f xml|turtle] [-o txt|xml|html] file:/lemon-file.rdf")
         exit()
 
     g = Graph()
