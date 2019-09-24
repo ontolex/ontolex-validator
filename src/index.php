@@ -28,7 +28,7 @@ if(array_key_exists('document',$_POST)) {
     if($format != "xml" && $format != "turtle") {
         $format = "xml";
     }
-    $cmd = "python " . getcwd() . "/ontolex-validator.py -f$format -ohtml $temp";
+    $cmd = "python3 " . getcwd() . "/ontolex-validator.py -f$format -ohtml $temp";
     $descriptorspec = array(
         0 => array("pipe", "r"),
         1 => array("pipe", "w"),

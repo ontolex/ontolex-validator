@@ -396,27 +396,29 @@ def validateText(lit):
     else:
         validateLanguage(lit.language)
 
+def cescape(s):
+    return s.encode('unicode-escape', errors='ignore').decode('ascii')
 
 def note(code,msg):
     global suspicious
     global endOfMessage
     if outputFormat == "txt":
-        endOfMessage.write("[NOTE ] " + msg + "\n")
+        endOfMessage.write("[NOTE ] " + cescape(msg) + "\n")
     elif outputFormat == "xml":
         endOfMessage.write( "<note code=\""+code+"\">" + escape(msg) + "</note>" +"\n")
     elif outputFormat == "html":
-        endOfMessage.write( "<div class=\"lemon-validator-note\">" + escape(msg) + " <a href=\"errors.html#" + code.lower() + "\">["+code+"]</a></div>" +"\n")
+        endOfMessage.write( "<div class=\"lemon-validator-note\">" + cescape(escape(msg)) + " <a href=\"errors.html#" + code.lower() + "\">["+code+"]</a></div>" +"\n")
     suspicious = suspicious + 1
 
 def warn(code,msg):
     global minor
     global warnOfMessage
     if outputFormat == "txt":
-        warnOfMessage.write( "[WARN ] " + msg+"\n")
+        warnOfMessage.write( "[WARN ] " + cescape(msg)+"\n")
     elif outputFormat == "xml":
         warnOfMessage.write( "<warn code=\""+code+"\">" + escape(msg) + "</warn>"+"\n")
     elif outputFormat == "html":
-        warnOfMessage.write( "<div class=\"lemon-validator-warn\">" + escape(msg) + " <a href=\"errors.html#" + code.lower() + "\">["+code+"]</a></div>"+"\n")
+        warnOfMessage.write( "<div class=\"lemon-validator-warn\">" + cescape(escape(msg)) + " <a href=\"errors.html#" + code.lower() + "\">["+code+"]</a></div>"+"\n")
     minor = minor + 1
 
 def err(code,msg):
