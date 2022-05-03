@@ -4,7 +4,7 @@ A Validator for OntoLex-Lemon Data
 
 ## Command Line Usage
 
-Install as in a virtual environment as follows:
+Install in a virtual environment as follows:
 
     python -m venv env
     source env/bin/activate
