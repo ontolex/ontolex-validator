@@ -506,7 +506,7 @@ def main(argv):
             if subj not in checked:
                 validateLemonElement(g,types,subj)
                 checked[subj] = True
-        elif pred.startswith(RDF.uri) or pred.startswith(RDFS.uri) or pred.startswith(OWL) or pred.startswith(lexinfo):
+        elif pred.startswith(str(RDF)) or pred.startswith(str(RDFS)) or pred.startswith(OWL) or pred.startswith(lexinfo):
             True
         elif pred in types.keys() and OWL.AnnotationProperty in types[pred]:
             True

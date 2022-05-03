@@ -4,6 +4,14 @@ A Validator for OntoLex-Lemon Data
 
 ## Command Line Usage
 
+Install as in a virtual environment as follows:
+
+    python -m venv env
+    source env/bin/activate
+    pip install -r requirements.txt
+
+You need to run the `source` command again each time you start the terminal.
+
 You can validate a file simply by running
 
     python3 ontolex-validator.py file:/path/to/file.rdf
