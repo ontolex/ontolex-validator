@@ -1,0 +1,11 @@
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix ex:      <http://example.org/> .
+
+# SENSE_NO_REF
+ex:senseA a ontolex:LexicalSense ;
+    ontolex:usage ex:u1 .
+
+# SENSE_MANY_REF
+ex:senseB a ontolex:LexicalSense ;
+    ontolex:usage ex:u2 ;
+    ontolex:reference ex:r1, ex:r2 .

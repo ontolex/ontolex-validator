@@ -1,0 +1,11 @@
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix ex:      <http://example.org/> .
+
+# NOT_LEMON_URI: ontolex:notARealProperty is not part of the fixed lemon
+# vocabulary (lemonURIs in ontolex-validator.py), even though it is in
+# the ontolex namespace.
+ex:entryA a ontolex:LexicalEntry ;
+    ontolex:canonicalForm ex:formA ;
+    ontolex:notARealProperty ex:x1 .
+
+ex:formA ontolex:writtenRep "a"@en .

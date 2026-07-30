@@ -1,0 +1,22 @@
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix lime:    <http://www.w3.org/ns/lemon/lime#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex:      <http://example.org/> .
+
+ex:lexicon1 a lime:Lexicon ;
+    lime:entry ex:entry1 ;
+    lime:language "en" .
+
+ex:entry1 a ontolex:LexicalEntry ;
+    ontolex:canonicalForm ex:form1 ;
+    lime:language "en" ;
+    rdfs:label "cat" ;
+    ontolex:sense ex:sense1 .
+
+ex:form1 a ontolex:Form ;
+    ontolex:writtenRep "cat"@en .
+
+ex:sense1 a ontolex:LexicalSense ;
+    ontolex:reference ex:concept1 .
+
+ex:concept1 a ontolex:LexicalConcept .

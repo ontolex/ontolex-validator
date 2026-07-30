@@ -1,0 +1,11 @@
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix ex:      <http://example.org/> .
+
+# NO_LANG (writtenRep literal has no language tag)
+ex:formA a ontolex:Form ;
+    ontolex:writtenRep "cat" .
+
+# BAD_LANG (writtenRep literal has a malformed language tag: bare 4-letter
+# primary subtag with no hyphen, which the validator's regex rejects)
+ex:formB a ontolex:Form ;
+    ontolex:writtenRep "cat"@abcd .

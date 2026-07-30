@@ -1,0 +1,10 @@
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix ex:      <http://example.org/> .
+
+# UNRECOGNIZED (ex:customProperty is not lemon, not RDF/RDFS/OWL/lexinfo,
+# and not declared as an owl:AnnotationProperty)
+ex:entryA a ontolex:LexicalEntry ;
+    ontolex:canonicalForm ex:formA ;
+    ex:customProperty "hello" .
+
+ex:formA ontolex:writtenRep "a"@en .

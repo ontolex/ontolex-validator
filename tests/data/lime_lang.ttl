@@ -1,0 +1,10 @@
+@prefix lime: <http://www.w3.org/ns/lemon/lime#> .
+@prefix ex:   <http://example.org/> .
+
+# LANG_ON_LANG
+ex:lexA lime:linguisticCatalog ex:catalogA ;
+    lime:language "en"@en .
+
+# BAD_LANG
+ex:lexB lime:linguisticCatalog ex:catalogB ;
+    lime:language "not a valid code!" .

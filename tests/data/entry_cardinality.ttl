@@ -1,0 +1,31 @@
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix lime:    <http://www.w3.org/ns/lemon/lime#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex:      <http://example.org/> .
+
+# ENTRY_NO_CAN_FORM
+ex:entryA a ontolex:LexicalEntry ;
+    lime:language "en" ;
+    rdfs:label "a" ;
+    ontolex:otherForm ex:formA .
+ex:formA ontolex:writtenRep "a"@en .
+
+# ENTRY_MANY_CAN_FORMS
+ex:entryB a ontolex:LexicalEntry ;
+    ontolex:canonicalForm ex:formB1, ex:formB2 ;
+    lime:language "en" ;
+    rdfs:label "b" .
+ex:formB1 ontolex:writtenRep "b1"@en .
+ex:formB2 ontolex:writtenRep "b2"@en .
+
+# ENTRY_MANY_LANG
+ex:entryC a ontolex:LexicalEntry ;
+    ontolex:canonicalForm ex:formC ;
+    lime:language "en", "fr" ;
+    rdfs:label "c" .
+ex:formC ontolex:writtenRep "c"@en .
+
+# ENTRY_NO_LANG, ENTRY_NO_RDFS_LABEL
+ex:entryD a ontolex:LexicalEntry ;
+    ontolex:canonicalForm ex:formD .
+ex:formD ontolex:writtenRep "d"@en .
