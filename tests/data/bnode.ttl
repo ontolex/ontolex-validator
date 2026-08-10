@@ -1,0 +1,5 @@
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix ex:      <http://example.org/> .
+
+# BNODE (blank node subject used with a non rdf:first/rdf:rest predicate)
+[] ontolex:writtenRep "a"@en .

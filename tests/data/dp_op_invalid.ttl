@@ -1,0 +1,17 @@
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix ex:      <http://example.org/> .
+
+# DP_INVALID_OBJ: a data property used with a non-literal (URI) object.
+ex:formA a ontolex:Form ;
+    ontolex:writtenRep ex:notALiteral .
+
+# OP_INVALID_OBJ: an object property used with a literal object. This
+# is now reachable even for common, domain-listed predicates like
+# ontolex:sense (previously only reachable for predicates with no
+# lemonPropDomains entry, e.g. ontolex:concept -- see the
+# ontolex-shapes.ttl comment / ontolex-validator#4).
+ex:entryA a ontolex:LexicalEntry ;
+    ontolex:canonicalForm ex:formB ;
+    ontolex:sense "not a URI" .
+
+ex:formB ontolex:writtenRep "b"@en .

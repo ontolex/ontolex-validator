@@ -1,0 +1,54 @@
+@prefix ontolex:  <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix synsem:   <http://www.w3.org/ns/lemon/synsem#> .
+@prefix vartrans: <http://www.w3.org/ns/lemon/vartrans#> .
+@prefix lime:     <http://www.w3.org/ns/lemon/lime#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex:       <http://example.org/> .
+
+# A mostly well-formed lexicon, with a handful of scattered problems,
+# combining several rules in one graph (as real-world data would).
+
+ex:lexicon1 a lime:Lexicon ;
+    lime:entry ex:entry1, ex:entry2 ;
+    lime:language "en" .
+
+ex:entry1 a ontolex:LexicalEntry ;
+    ontolex:canonicalForm ex:form1 ;
+    lime:language "en" ;
+    rdfs:label "run" ;
+    ontolex:sense ex:sense1 .
+
+ex:form1 a ontolex:Form ;
+    ontolex:writtenRep "run"@en .
+
+ex:sense1 a ontolex:LexicalSense ;
+    ontolex:reference ex:concept1 ;
+    vartrans:translatableAs ex:entry2 .
+
+ex:concept1 a ontolex:LexicalConcept .
+
+# entry2 is only reachable via vartrans:translatableAs above (no
+# rdf:type, no other lemon predicate of its own besides being the
+# object of translatableAs -- range-inferred, still expected to be
+# fully checked as a LexicalEntry).
+ex:entry2 ontolex:canonicalForm ex:form2 .
+
+ex:form2 ontolex:writtenRep "flee"@en .
+
+# entry3: missing canonical form, missing language, missing label.
+ex:entry3 a ontolex:LexicalEntry ;
+    ontolex:sense ex:sense3 .
+
+ex:sense3 a ontolex:LexicalSense .
+
+# A synsem:optional flag with a bad value, on an unrelated node.
+ex:frame1 a synsem:SyntacticFrame ;
+    synsem:synArg ex:arg1 .
+
+ex:arg1 a synsem:SyntacticArgument ;
+    synsem:optional "yes" .
+
+# A stray blank node and an unrecognized predicate.
+[] ontolex:phoneticRep "fli:"@en .
+
+ex:entry1 ex:extraNote "internal comment, not part of ontolex" .

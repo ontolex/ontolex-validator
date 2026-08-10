@@ -1,0 +1,825 @@
+@prefix sh:       <http://www.w3.org/ns/shacl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix ontolex:  <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix synsem:   <http://www.w3.org/ns/lemon/synsem#> .
+@prefix decomp:   <http://www.w3.org/ns/lemon/decomp#> .
+@prefix vartrans: <http://www.w3.org/ns/lemon/vartrans#> .
+@prefix lime:     <http://www.w3.org/ns/lemon/lime#> .
+@prefix lexinfo:  <http://www.lexinfo.net/ontology/2.0/lexinfo#> .
+@prefix :         <http://www.w3.org/ns/lemon/ontolex-shapes#> .
+
+#
+# SHACL translation of src/ontolex-validator.py
+#
+# Severity mapping used throughout this file, matching the three message
+# levels the python script prints:
+#   sh:Violation -> err()  ("major" / [ERROR])
+#   sh:Warning   -> warn() ("minor" / [WARN])
+#   sh:Info      -> note() ("suspicious" / [NOTE])
+#
+# Each sh:message begins with the same rule code used in the python
+# script (e.g. "ENTRY_NO_CAN_FORM: ...") so results can be matched 1-1
+# against the -o xml output of ontolex-validator.py. See tests/compare.py.
+#
+# Known, deliberate deviations from the python script are documented
+# inline with "NOTE:" comments; the most important ones are:
+#  - An element that is only ever the OBJECT of some property (never
+#    the subject of any ontolex/synsem/decomp/vartrans/lime property,
+#    and never given an explicit rdf:type) is never validated in
+#    ontolex-validator.py: main() only calls validateLemonElement() for
+#    a subject once it has seen that subject either (a) used as the
+#    subject of a triple with an is_lemon_uri() predicate, or (b) given
+#    an explicit rdf:type naming one of the five classes
+#    validateLemonElement() dispatches on -- see
+#    https://github.com/ontolex/ontolex-validator/issues/5 and the PR
+#    that closed it. The five class shapes below reproduce this: the
+#    `?this a <Class>` branch of each sh:target is ungated (case (b)
+#    above always qualifies on its own), while the "range-inferred"
+#    branches (?this being the object of one of the class's
+#    unambiguous range properties, without its own rdf:type) still
+#    require ?this to ALSO be the subject of some lemon-namespaced
+#    triple elsewhere in the graph, via a FILTER EXISTS -- being merely
+#    the object of a property never satisfies case (a) above. Domain
+#    properties (sh:targetSubjectsOf) always satisfy case (a) trivially
+#    and are left as-is.
+#  - MULT_TYPES is not reproduced. It is a diagnostic about the python
+#    script's own type-inference confidence, not a check on the RDF
+#    data, so it has no direct SHACL equivalent.
+#  - DP_INVALID_OBJ / OP_INVALID_OBJ: see the comment before
+#    ":LemonDataPropertyObjectShape" below.
+#  - Elements whose inferred type is genuinely ambiguous in the python
+#    script (e.g. subjects of decomp:constituent, which can be either
+#    ontolex:LexicalEntry or decomp:Component and are disambiguated by
+#    harmonizeType()) are only targeted here through their unambiguous
+#    domain/range properties, to avoid false positives that the python
+#    heuristic would have suppressed.
+#
+
+#####################################################################
+# 1. ontolex:LexicalEntry
+#####################################################################
+
+:LexicalEntryShape
+    a sh:NodeShape ;
+    # An explicit rdf:type is checked on its own (case (b), ungated).
+    # Range-inferred candidates only count if ?this is *also* the
+    # subject of some lemon-namespaced triple elsewhere (case (a), the
+    # "checked" gate in main()); domain-inferred candidates
+    # (sh:targetSubjectsOf below) always satisfy case (a) trivially and
+    # so are left ungated too.
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:select """
+            SELECT DISTINCT ?this
+            WHERE {
+                {
+                    ?this a <http://www.w3.org/ns/lemon/ontolex#LexicalEntry> .
+                } UNION {
+                    {
+                        ?s1 <http://www.w3.org/ns/lemon/ontolex#isDenotedBy> ?this .
+                    } UNION {
+                        ?s2 <http://www.w3.org/ns/lemon/ontolex#isSenseOf> ?this .
+                    } UNION {
+                        ?s3 <http://www.w3.org/ns/lemon/ontolex#isEvokedBy> ?this .
+                    } UNION {
+                        ?s4 <http://www.w3.org/ns/lemon/vartrans#translatableAs> ?this .
+                    } UNION {
+                        ?s5 <http://www.w3.org/ns/lemon/vartrans#lexicalRel> ?this .
+                    } UNION {
+                        ?s6 <http://www.w3.org/ns/lemon/decomp#subterm> ?this .
+                    } UNION {
+                        ?s7 <http://www.w3.org/ns/lemon/lime#entry> ?this .
+                    }
+                    FILTER EXISTS {
+                        ?this ?lp ?lo .
+                        FILTER (
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
+                        )
+                    }
+                }
+            }
+        """ ;
+    ] ;
+    sh:targetSubjectsOf ontolex:canonicalForm, ontolex:sense, ontolex:otherForm,
+                        ontolex:denotes, ontolex:evokes, ontolex:lexicalForm,
+                        ontolex:morphologicalPattern, synsem:synBehavior,
+                        vartrans:translatableAs, vartrans:lexicalRel, decomp:subterm ;
+    sh:property [
+        sh:path ontolex:canonicalForm ;
+        sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "ENTRY_MANY_CAN_FORMS: Lexical Entry has multiple canonical forms" ;
+    ] ;
+    sh:property [
+        sh:path ontolex:canonicalForm ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "ENTRY_NO_CAN_FORM: Lexical Entry does not have a canonical form" ;
+    ] ;
+    sh:property [
+        sh:path lime:language ;
+        sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "ENTRY_MANY_LANG: Lexical Entry has multiple languages" ;
+    ] ;
+    sh:property [
+        sh:path lime:language ;
+        sh:minCount 1 ;
+        sh:severity sh:Info ;
+        sh:message "ENTRY_NO_LANG: Lexical Entry does not have a language" ;
+    ] ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:severity sh:Info ;
+        sh:message "ENTRY_NO_RDFS_LABEL: Lexical Entry does not have a RDFS label" ;
+    ] .
+
+#####################################################################
+# 2. ontolex:LexicalSense
+#####################################################################
+
+:LexicalSenseShape
+    a sh:NodeShape ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:select """
+            SELECT DISTINCT ?this
+            WHERE {
+                {
+                    ?this a <http://www.w3.org/ns/lemon/ontolex#LexicalSense> .
+                } UNION {
+                    {
+                        ?s1 <http://www.w3.org/ns/lemon/ontolex#lexicalizedSense> ?this .
+                    } UNION {
+                        ?s2 <http://www.w3.org/ns/lemon/ontolex#isLexicalizedSenseOf> ?this .
+                    } UNION {
+                        ?s3 <http://www.w3.org/ns/lemon/vartrans#senseRel> ?this .
+                    } UNION {
+                        ?s4 <http://www.w3.org/ns/lemon/ontolex#sense> ?this .
+                    } UNION {
+                        ?s5 <http://www.w3.org/ns/lemon/synsem#ontoMapping> ?this .
+                    }
+                    FILTER EXISTS {
+                        ?this ?lp ?lo .
+                        FILTER (
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
+                        )
+                    }
+                }
+            }
+        """ ;
+    ] ;
+    sh:targetSubjectsOf ontolex:usage, ontolex:isSenseOf, vartrans:senseRel ;
+    sh:property [
+        sh:path ontolex:reference ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "SENSE_NO_REF: Lexical Sense does not have a reference" ;
+    ] ;
+    sh:property [
+        sh:path ontolex:reference ;
+        sh:maxCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "SENSE_MANY_REF: Lexical Sense has multiple references" ;
+    ] .
+
+#####################################################################
+# 3. ontolex:Form
+#####################################################################
+
+:FormShape
+    a sh:NodeShape ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:select """
+            SELECT DISTINCT ?this
+            WHERE {
+                {
+                    ?this a <http://www.w3.org/ns/lemon/ontolex#Form> .
+                } UNION {
+                    {
+                        ?s1 <http://www.w3.org/ns/lemon/ontolex#canonicalForm> ?this .
+                    } UNION {
+                        ?s2 <http://www.w3.org/ns/lemon/ontolex#otherForm> ?this .
+                    } UNION {
+                        ?s3 <http://www.w3.org/ns/lemon/ontolex#lexicalForm> ?this .
+                    }
+                    FILTER EXISTS {
+                        ?this ?lp ?lo .
+                        FILTER (
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
+                        )
+                    }
+                }
+            }
+        """ ;
+    ] ;
+    sh:targetSubjectsOf ontolex:writtenRep, ontolex:phoneticRep, ontolex:representation ;
+    sh:property [
+        sh:path ontolex:writtenRep ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "FORM_NO_REP: Form does not have a written representation" ;
+    ] .
+
+#####################################################################
+# 4. decomp:Component
+#
+# validateComponent() (COMPONENT_NO_ELEM / COMPONENT_MANY_ELEM) used to
+# be unreachable dead code -- validateLemonElement() dispatched on
+# "type == synsem.Component", a class that is never defined anywhere in
+# the synsem namespace, instead of decomp.Component -- and
+# validateComponent() itself checked ontolex:correspondsTo rather than
+# decomp:correspondsTo. Both are fixed upstream; see
+# https://github.com/ontolex/ontolex-validator/issues/3 and the PR that
+# closes it. This shape reproduces the now-reachable behaviour.
+#####################################################################
+
+:ComponentShape
+    a sh:NodeShape ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:select """
+            SELECT DISTINCT ?this
+            WHERE {
+                {
+                    ?this a <http://www.w3.org/ns/lemon/decomp#Component> .
+                } UNION {
+                    {
+                        ?s1 <http://www.w3.org/ns/lemon/decomp#constituent> ?this .
+                    }
+                    FILTER EXISTS {
+                        ?this ?lp ?lo .
+                        FILTER (
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
+                        )
+                    }
+                }
+            }
+        """ ;
+    ] ;
+    sh:targetSubjectsOf decomp:correspondsTo ;
+    sh:property [
+        sh:path decomp:correspondsTo ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "COMPONENT_NO_ELEM: Component does not have an element" ;
+    ] ;
+    sh:property [
+        sh:path decomp:correspondsTo ;
+        sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "COMPONENT_MANY_ELEM: Component has more than one element" ;
+    ] .
+
+#####################################################################
+# 5. lime:Lexicon
+#####################################################################
+
+:LexiconShape
+    a sh:NodeShape ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:select """
+            SELECT DISTINCT ?this
+            WHERE {
+                {
+                    ?this a <http://www.w3.org/ns/lemon/lime#Lexicon> .
+                } UNION {
+                    {
+                        ?s1 <http://www.w3.org/ns/lemon/lime#lexiconDataset> ?this .
+                    }
+                    FILTER EXISTS {
+                        ?this ?lp ?lo .
+                        FILTER (
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
+                        )
+                    }
+                }
+            }
+        """ ;
+    ] ;
+    sh:targetSubjectsOf lime:entry, lime:linguisticCatalog ;
+    sh:property [
+        sh:path lime:entry ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "LEXICON_EMPTY: Lexicon contains no values" ;
+    ] ;
+    sh:property [
+        sh:path lime:language ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "LEXICON_NO_LANG: Lexicon does not have a language" ;
+    ] ;
+    sh:property [
+        sh:path lime:language ;
+        sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "LEXICON_MANY_LANG: Lexicon has multiple languages" ;
+    ] .
+
+#####################################################################
+# 6. synsem:optional boolean literal validation (validateBoolLiteral)
+#####################################################################
+
+:BooleanOptionalShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf synsem:optional ;
+    sh:property [
+        sh:path synsem:optional ;
+        sh:datatype xsd:boolean ;
+        sh:severity sh:Warning ;
+        sh:message "BOOL_NO_TYPE: Boolean value not marked as xsd:boolean" ;
+    ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "BOOL_BAD_VALUE: Invalid boolean value" ;
+        sh:severity sh:Violation ;
+        sh:select """
+            SELECT $this ?value
+            WHERE {
+                $this <http://www.w3.org/ns/lemon/synsem#optional> ?value .
+                FILTER ( !(LCASE(STR(?value)) IN ("true", "false", "1", "0")) )
+            }
+        """ ;
+    ] .
+
+#####################################################################
+# 7. lime:language literal validation (validateLanguage, LANG_ON_LANG)
+#####################################################################
+
+:LimeLanguageShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf lime:language ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "LANG_ON_LANG: Language tag on language identifier" ;
+        sh:severity sh:Violation ;
+        sh:select """
+            SELECT $this ?value
+            WHERE {
+                $this <http://www.w3.org/ns/lemon/lime#language> ?value .
+                FILTER ( isLiteral(?value) && LANG(?value) != "" )
+            }
+        """ ;
+    ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "BAD_LANG: Invalid language code" ;
+        sh:severity sh:Violation ;
+        sh:select """
+            SELECT $this ?value
+            WHERE {
+                $this <http://www.w3.org/ns/lemon/lime#language> ?value .
+                FILTER ( isLiteral(?value) &&
+                         !REGEX(STR(?value), "^(...?)(-[A-Za-z]{4})?(-[A-Za-z]{2}|-[0-9]{3})?((-[A-Za-z0-9]{5,8}|-[0-9][A-Za-z0-9]{3})*)((-[A-WY-Za-wy-z0-9]-\\\\w{2,8})*)(-[Xx]-\\\\w{1,8})?$") )
+            }
+        """ ;
+    ] .
+
+#####################################################################
+# 8. Language-tagged text validation for other lemon data properties
+#    (validateText / NO_LANG / BAD_LANG).
+#
+# lemonDataProperties minus synsem:optional and lime:language.
+#####################################################################
+
+:LemonTextPropertyShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf ontolex:writtenRep, ontolex:phoneticRep, ontolex:representation,
+                        lime:avgSynonymy, lime:avgNumOfLexicalizations, lime:links,
+                        lime:referenceDataset, lime:concepts, lime:lexicalizations,
+                        lime:avgNumOfLinks, lime:lexicalEntries, lime:conceptualizations,
+                        lime:percentage, lime:avgAmbiguity, lime:references ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "NO_LANG: Language tag missing from literal" ;
+        sh:severity sh:Violation ;
+        sh:select """
+            SELECT $this ?path ?value
+            WHERE {
+                $this ?path ?value .
+                FILTER ( ?path IN (
+                    <http://www.w3.org/ns/lemon/ontolex#writtenRep>,
+                    <http://www.w3.org/ns/lemon/ontolex#phoneticRep>,
+                    <http://www.w3.org/ns/lemon/ontolex#representation>,
+                    <http://www.w3.org/ns/lemon/lime#avgSynonymy>,
+                    <http://www.w3.org/ns/lemon/lime#avgNumOfLexicalizations>,
+                    <http://www.w3.org/ns/lemon/lime#links>,
+                    <http://www.w3.org/ns/lemon/lime#referenceDataset>,
+                    <http://www.w3.org/ns/lemon/lime#concepts>,
+                    <http://www.w3.org/ns/lemon/lime#lexicalizations>,
+                    <http://www.w3.org/ns/lemon/lime#avgNumOfLinks>,
+                    <http://www.w3.org/ns/lemon/lime#lexicalEntries>,
+                    <http://www.w3.org/ns/lemon/lime#conceptualizations>,
+                    <http://www.w3.org/ns/lemon/lime#percentage>,
+                    <http://www.w3.org/ns/lemon/lime#avgAmbiguity>,
+                    <http://www.w3.org/ns/lemon/lime#references>
+                ) )
+                FILTER ( isLiteral(?value) && LANG(?value) = "" )
+            }
+        """ ;
+    ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "BAD_LANG: Invalid language code" ;
+        sh:severity sh:Violation ;
+        sh:select """
+            SELECT $this ?path ?value
+            WHERE {
+                $this ?path ?value .
+                FILTER ( ?path IN (
+                    <http://www.w3.org/ns/lemon/ontolex#writtenRep>,
+                    <http://www.w3.org/ns/lemon/ontolex#phoneticRep>,
+                    <http://www.w3.org/ns/lemon/ontolex#representation>,
+                    <http://www.w3.org/ns/lemon/lime#avgSynonymy>,
+                    <http://www.w3.org/ns/lemon/lime#avgNumOfLexicalizations>,
+                    <http://www.w3.org/ns/lemon/lime#links>,
+                    <http://www.w3.org/ns/lemon/lime#referenceDataset>,
+                    <http://www.w3.org/ns/lemon/lime#concepts>,
+                    <http://www.w3.org/ns/lemon/lime#lexicalizations>,
+                    <http://www.w3.org/ns/lemon/lime#avgNumOfLinks>,
+                    <http://www.w3.org/ns/lemon/lime#lexicalEntries>,
+                    <http://www.w3.org/ns/lemon/lime#conceptualizations>,
+                    <http://www.w3.org/ns/lemon/lime#percentage>,
+                    <http://www.w3.org/ns/lemon/lime#avgAmbiguity>,
+                    <http://www.w3.org/ns/lemon/lime#references>
+                ) )
+                FILTER ( isLiteral(?value) && LANG(?value) != "" &&
+                         !REGEX(LANG(?value), "^(...?)(-[A-Za-z]{4})?(-[A-Za-z]{2}|-[0-9]{3})?((-[A-Za-z0-9]{5,8}|-[0-9][A-Za-z0-9]{3})*)((-[A-WY-Za-wy-z0-9]-\\\\w{2,8})*)(-[Xx]-\\\\w{1,8})?$") )
+            }
+        """ ;
+    ] .
+
+# NOTE: ontolex-validator.py's computeTypes() checks DP_INVALID_OBJ and
+# OP_INVALID_OBJ per predicate/object pair, independently of the
+# domain/range type-inference lookup (see
+# https://github.com/ontolex/ontolex-validator/issues/4 and the PR that
+# closes it):
+#   if pred in lemonPropDomains: ct.add(...)
+#   elif pred in lexinfoProps: ct.add(...)
+#   if pred in lemonDataProperties and not isinstance(obj, Literal): DP_INVALID_OBJ
+#   elif is_lemon_uri(pred) and pred not in lemonDataProperties and isinstance(obj, Literal): OP_INVALID_OBJ
+# DP_INVALID_OBJ fires for the 17 lemonDataProperties predicates when
+# used with a non-literal (URI/blank node) object; OP_INVALID_OBJ fires
+# for every other lemon-namespaced predicate when used with a literal
+# object. The two are mutually exclusive per triple (one requires the
+# predicate to be a data property, the other that it isn't), and also
+# mutually exclusive with the literal-specific checks in section 6-8
+# above (validateBoolLiteral/validateLanguage/validateText in the
+# python script are themselves only called when the object *is* a
+# Literal, at a separate point in main()'s triple loop).
+
+#####################################################################
+# 9. Data lemon properties used with a non-literal object
+#    (DP_INVALID_OBJ).
+#####################################################################
+
+:LemonDataPropertyObjectShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf
+        ontolex:writtenRep, ontolex:phoneticRep, ontolex:representation,
+        synsem:optional, lime:language, lime:avgSynonymy,
+        lime:avgNumOfLexicalizations, lime:links, lime:referenceDataset,
+        lime:concepts, lime:lexicalizations, lime:avgNumOfLinks,
+        lime:lexicalEntries, lime:conceptualizations, lime:percentage,
+        lime:avgAmbiguity, lime:references ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "DP_INVALID_OBJ: URI as object of a data property" ;
+        sh:severity sh:Violation ;
+        sh:select """
+            SELECT $this ?path ?value
+            WHERE {
+                $this ?path ?value .
+                FILTER (
+                    ?path IN (
+                        <http://www.w3.org/ns/lemon/ontolex#writtenRep>,
+                        <http://www.w3.org/ns/lemon/ontolex#phoneticRep>,
+                        <http://www.w3.org/ns/lemon/ontolex#representation>,
+                        <http://www.w3.org/ns/lemon/synsem#optional>,
+                        <http://www.w3.org/ns/lemon/lime#language>,
+                        <http://www.w3.org/ns/lemon/lime#avgSynonymy>,
+                        <http://www.w3.org/ns/lemon/lime#avgNumOfLexicalizations>,
+                        <http://www.w3.org/ns/lemon/lime#links>,
+                        <http://www.w3.org/ns/lemon/lime#referenceDataset>,
+                        <http://www.w3.org/ns/lemon/lime#concepts>,
+                        <http://www.w3.org/ns/lemon/lime#lexicalizations>,
+                        <http://www.w3.org/ns/lemon/lime#avgNumOfLinks>,
+                        <http://www.w3.org/ns/lemon/lime#lexicalEntries>,
+                        <http://www.w3.org/ns/lemon/lime#conceptualizations>,
+                        <http://www.w3.org/ns/lemon/lime#percentage>,
+                        <http://www.w3.org/ns/lemon/lime#avgAmbiguity>,
+                        <http://www.w3.org/ns/lemon/lime#references>
+                    )
+                    && !isLiteral(?value)
+                )
+            }
+        """ ;
+    ] .
+
+#####################################################################
+# 10. Object (non-data) lemon properties used with a literal object
+#    (OP_INVALID_OBJ). Target = any subject touching at least one
+#    lemon-namespaced predicate, mirroring the "subj not in checked"
+#    gate in main(), which then inspects every predicate of that
+#    subject via computeTypes().
+#####################################################################
+
+:LemonSubjectShape
+    a sh:NodeShape ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:select """
+            SELECT DISTINCT ?this
+            WHERE {
+                ?this ?p ?o .
+                FILTER (
+                    STRSTARTS(STR(?p), "http://www.w3.org/ns/lemon/ontolex#") ||
+                    STRSTARTS(STR(?p), "http://www.w3.org/ns/lemon/synsem#") ||
+                    STRSTARTS(STR(?p), "http://www.w3.org/ns/lemon/decomp#") ||
+                    STRSTARTS(STR(?p), "http://www.w3.org/ns/lemon/vartrans#") ||
+                    STRSTARTS(STR(?p), "http://www.w3.org/ns/lemon/lime#")
+                )
+            }
+        """ ;
+    ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "OP_INVALID_OBJ: Literal as object of an object property" ;
+        sh:severity sh:Violation ;
+        sh:select """
+            SELECT $this ?path ?value
+            WHERE {
+                $this ?path ?value .
+                FILTER (
+                    ( STRSTARTS(STR(?path), "http://www.w3.org/ns/lemon/ontolex#") ||
+                      STRSTARTS(STR(?path), "http://www.w3.org/ns/lemon/synsem#") ||
+                      STRSTARTS(STR(?path), "http://www.w3.org/ns/lemon/decomp#") ||
+                      STRSTARTS(STR(?path), "http://www.w3.org/ns/lemon/vartrans#") ||
+                      STRSTARTS(STR(?path), "http://www.w3.org/ns/lemon/lime#") )
+                    &&
+                    ?path NOT IN (
+                        <http://www.w3.org/ns/lemon/ontolex#writtenRep>,
+                        <http://www.w3.org/ns/lemon/ontolex#phoneticRep>,
+                        <http://www.w3.org/ns/lemon/ontolex#representation>,
+                        <http://www.w3.org/ns/lemon/synsem#optional>,
+                        <http://www.w3.org/ns/lemon/lime#language>,
+                        <http://www.w3.org/ns/lemon/lime#avgSynonymy>,
+                        <http://www.w3.org/ns/lemon/lime#avgNumOfLexicalizations>,
+                        <http://www.w3.org/ns/lemon/lime#links>,
+                        <http://www.w3.org/ns/lemon/lime#referenceDataset>,
+                        <http://www.w3.org/ns/lemon/lime#concepts>,
+                        <http://www.w3.org/ns/lemon/lime#lexicalizations>,
+                        <http://www.w3.org/ns/lemon/lime#avgNumOfLinks>,
+                        <http://www.w3.org/ns/lemon/lime#lexicalEntries>,
+                        <http://www.w3.org/ns/lemon/lime#conceptualizations>,
+                        <http://www.w3.org/ns/lemon/lime#percentage>,
+                        <http://www.w3.org/ns/lemon/lime#avgAmbiguity>,
+                        <http://www.w3.org/ns/lemon/lime#references>
+                    )
+                    && isLiteral(?value)
+                )
+            }
+        """ ;
+    ] .
+
+#####################################################################
+# 11. NOT_LEMON_URI: any IRI in a lemon namespace that is not part of
+#     the fixed, known vocabulary (lemonURIs in ontolex-validator.py)
+#     is an error, wherever it appears (subject, predicate or object).
+#####################################################################
+
+:NotLemonUriShape
+    a sh:NodeShape ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:select """
+            SELECT DISTINCT ?this
+            WHERE {
+                { ?this ?p1 ?o1 . FILTER(isIRI(?this)) }
+                UNION
+                { ?s2 ?this ?o2 . }
+                UNION
+                { ?s3 ?p3 ?this . FILTER(isIRI(?this)) }
+                FILTER (
+                    STRSTARTS(STR(?this), "http://www.w3.org/ns/lemon/ontolex#") ||
+                    STRSTARTS(STR(?this), "http://www.w3.org/ns/lemon/synsem#") ||
+                    STRSTARTS(STR(?this), "http://www.w3.org/ns/lemon/decomp#") ||
+                    STRSTARTS(STR(?this), "http://www.w3.org/ns/lemon/vartrans#") ||
+                    STRSTARTS(STR(?this), "http://www.w3.org/ns/lemon/lime#")
+                )
+            }
+        """ ;
+    ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "NOT_LEMON_URI: Not a lemon URI" ;
+        sh:severity sh:Violation ;
+        sh:select """
+            SELECT $this ?path ?value
+            WHERE {
+                {
+                    $this ?path ?value .
+                }
+                UNION
+                {
+                    ?path $this ?value .
+                }
+                UNION
+                {
+                    ?path ?value $this .
+                }
+                FILTER ( $this NOT IN (
+                    <http://www.w3.org/ns/lemon/decomp#Component>,
+                    <http://www.w3.org/ns/lemon/decomp#constituent>,
+                    <http://www.w3.org/ns/lemon/decomp#correspondsTo>,
+                    <http://www.w3.org/ns/lemon/decomp#subterm>,
+                    <http://www.w3.org/ns/lemon/lime#ConceptualizationSet>,
+                    <http://www.w3.org/ns/lemon/lime#LexicalLinkset>,
+                    <http://www.w3.org/ns/lemon/lime#LexicalizationSet>,
+                    <http://www.w3.org/ns/lemon/lime#Lexicon>,
+                    <http://www.w3.org/ns/lemon/lime#avgAmbiguity>,
+                    <http://www.w3.org/ns/lemon/lime#avgNumOfLexicalizations>,
+                    <http://www.w3.org/ns/lemon/lime#avgNumOfLinks>,
+                    <http://www.w3.org/ns/lemon/lime#avgSynonymy>,
+                    <http://www.w3.org/ns/lemon/lime#concepts>,
+                    <http://www.w3.org/ns/lemon/lime#conceptualDataset>,
+                    <http://www.w3.org/ns/lemon/lime#conceptualizations>,
+                    <http://www.w3.org/ns/lemon/lime#entry>,
+                    <http://www.w3.org/ns/lemon/lime#language>,
+                    <http://www.w3.org/ns/lemon/lime#lexicalEntries>,
+                    <http://www.w3.org/ns/lemon/lime#lexicalizationModel>,
+                    <http://www.w3.org/ns/lemon/lime#lexicalizations>,
+                    <http://www.w3.org/ns/lemon/lime#lexiconDataset>,
+                    <http://www.w3.org/ns/lemon/lime#linguisticCatalog>,
+                    <http://www.w3.org/ns/lemon/lime#links>,
+                    <http://www.w3.org/ns/lemon/lime#partition>,
+                    <http://www.w3.org/ns/lemon/lime#percentage>,
+                    <http://www.w3.org/ns/lemon/lime#referenceDataset>,
+                    <http://www.w3.org/ns/lemon/lime#references>,
+                    <http://www.w3.org/ns/lemon/lime#resourceType>,
+                    <http://www.w3.org/ns/lemon/ontolex#Affix>,
+                    <http://www.w3.org/ns/lemon/ontolex#ConceptSet>,
+                    <http://www.w3.org/ns/lemon/ontolex#Form>,
+                    <http://www.w3.org/ns/lemon/ontolex#LexicalConcept>,
+                    <http://www.w3.org/ns/lemon/ontolex#LexicalEntry>,
+                    <http://www.w3.org/ns/lemon/ontolex#LexicalSense>,
+                    <http://www.w3.org/ns/lemon/ontolex#MultiwordExpression>,
+                    <http://www.w3.org/ns/lemon/ontolex#Word>,
+                    <http://www.w3.org/ns/lemon/ontolex#canonicalForm>,
+                    <http://www.w3.org/ns/lemon/ontolex#concept>,
+                    <http://www.w3.org/ns/lemon/ontolex#denotes>,
+                    <http://www.w3.org/ns/lemon/ontolex#evokes>,
+                    <http://www.w3.org/ns/lemon/ontolex#isConceptOf>,
+                    <http://www.w3.org/ns/lemon/ontolex#isDenotedBy>,
+                    <http://www.w3.org/ns/lemon/ontolex#isEvokedBy>,
+                    <http://www.w3.org/ns/lemon/ontolex#isLexicalizedSenseOf>,
+                    <http://www.w3.org/ns/lemon/ontolex#isReferenceOf>,
+                    <http://www.w3.org/ns/lemon/ontolex#isSenseOf>,
+                    <http://www.w3.org/ns/lemon/ontolex#lexicalForm>,
+                    <http://www.w3.org/ns/lemon/ontolex#lexicalizedSense>,
+                    <http://www.w3.org/ns/lemon/ontolex#morphologicalPattern>,
+                    <http://www.w3.org/ns/lemon/ontolex#otherForm>,
+                    <http://www.w3.org/ns/lemon/ontolex#phoneticRep>,
+                    <http://www.w3.org/ns/lemon/ontolex#reference>,
+                    <http://www.w3.org/ns/lemon/ontolex#representation>,
+                    <http://www.w3.org/ns/lemon/ontolex#sense>,
+                    <http://www.w3.org/ns/lemon/ontolex#usage>,
+                    <http://www.w3.org/ns/lemon/ontolex#writtenRep>,
+                    <http://www.w3.org/ns/lemon/synsem#OntoMap>,
+                    <http://www.w3.org/ns/lemon/synsem#SyntacticArgument>,
+                    <http://www.w3.org/ns/lemon/synsem#SyntacticFrame>,
+                    <http://www.w3.org/ns/lemon/synsem#condition>,
+                    <http://www.w3.org/ns/lemon/synsem#isA>,
+                    <http://www.w3.org/ns/lemon/synsem#marker>,
+                    <http://www.w3.org/ns/lemon/synsem#objOfProp>,
+                    <http://www.w3.org/ns/lemon/synsem#ontoCorrespondence>,
+                    <http://www.w3.org/ns/lemon/synsem#ontoMapping>,
+                    <http://www.w3.org/ns/lemon/synsem#optional>,
+                    <http://www.w3.org/ns/lemon/synsem#propertyDomain>,
+                    <http://www.w3.org/ns/lemon/synsem#propertyRange>,
+                    <http://www.w3.org/ns/lemon/synsem#subjOfProp>,
+                    <http://www.w3.org/ns/lemon/synsem#submap>,
+                    <http://www.w3.org/ns/lemon/synsem#synArg>,
+                    <http://www.w3.org/ns/lemon/synsem#synBehavior>,
+                    <http://www.w3.org/ns/lemon/vartrans#ConceptualRelation>,
+                    <http://www.w3.org/ns/lemon/vartrans#LexicalRelation>,
+                    <http://www.w3.org/ns/lemon/vartrans#LexicoSemanticRelation>,
+                    <http://www.w3.org/ns/lemon/vartrans#SenseRelation>,
+                    <http://www.w3.org/ns/lemon/vartrans#TerminologicalRelation>,
+                    <http://www.w3.org/ns/lemon/vartrans#Translation>,
+                    <http://www.w3.org/ns/lemon/vartrans#TranslationSet>,
+                    <http://www.w3.org/ns/lemon/vartrans#category>,
+                    <http://www.w3.org/ns/lemon/vartrans#conceptRel>,
+                    <http://www.w3.org/ns/lemon/vartrans#lexicalRel>,
+                    <http://www.w3.org/ns/lemon/vartrans#relates>,
+                    <http://www.w3.org/ns/lemon/vartrans#senseRel>,
+                    <http://www.w3.org/ns/lemon/vartrans#source>,
+                    <http://www.w3.org/ns/lemon/vartrans#target>,
+                    <http://www.w3.org/ns/lemon/vartrans#trans>,
+                    <http://www.w3.org/ns/lemon/vartrans#translatableAs>,
+                    <http://www.w3.org/ns/lemon/vartrans#translation>
+                ) )
+            }
+        """ ;
+    ] .
+
+#####################################################################
+# 12. BNODE: blank node subject used with a predicate other than
+#     rdf:first/rdf:rest (i.e. not a plain RDF list cell).
+#####################################################################
+
+:BNodeShape
+    a sh:NodeShape ;
+    # sh:severity must live on the NodeShape itself: pyshacl (0.19.1)
+    # ignores sh:severity set directly on a sh:sparql SPARQLConstraint
+    # blank node and always reports sh:Violation in that case.
+    sh:severity sh:Warning ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:select """
+            SELECT DISTINCT ?this
+            WHERE {
+                ?this ?p ?o .
+                FILTER(isBlank(?this))
+            }
+        """ ;
+    ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "BNODE: Blank node usage" ;
+        sh:select """
+            SELECT $this ?path ?value
+            WHERE {
+                $this ?path ?value .
+                FILTER ( ?path != rdf:first && ?path != rdf:rest )
+            }
+        """ ;
+    ] .
+
+#####################################################################
+# 13. UNRECOGNIZED: a triple whose predicate is not in a lemon
+#     namespace, not RDF/RDFS/OWL/lexinfo, and not declared as an
+#     owl:AnnotationProperty.
+#####################################################################
+
+:UnrecognizedTripleShape
+    a sh:NodeShape ;
+    # sh:severity must live on the NodeShape itself, see :BNodeShape.
+    sh:severity sh:Info ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:select """
+            SELECT DISTINCT ?this
+            WHERE { ?this ?p ?o . }
+        """ ;
+    ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "UNRECOGNIZED: Unrecognized triple" ;
+        sh:select """
+            SELECT $this ?path ?value
+            WHERE {
+                $this ?path ?value .
+                FILTER (
+                    !( STRSTARTS(STR(?path), "http://www.w3.org/ns/lemon/ontolex#") ||
+                       STRSTARTS(STR(?path), "http://www.w3.org/ns/lemon/synsem#") ||
+                       STRSTARTS(STR(?path), "http://www.w3.org/ns/lemon/decomp#") ||
+                       STRSTARTS(STR(?path), "http://www.w3.org/ns/lemon/vartrans#") ||
+                       STRSTARTS(STR(?path), "http://www.w3.org/ns/lemon/lime#") ||
+                       STRSTARTS(STR(?path), "http://www.w3.org/1999/02/22-rdf-syntax-ns#") ||
+                       STRSTARTS(STR(?path), "http://www.w3.org/2000/01/rdf-schema#") ||
+                       STRSTARTS(STR(?path), "http://www.w3.org/2002/07/owl#") ||
+                       STRSTARTS(STR(?path), "http://www.lexinfo.net/ontology/2.0/lexinfo#") )
+                    &&
+                    !EXISTS { ?path a <http://www.w3.org/2002/07/owl#AnnotationProperty> }
+                )
+            }
+        """ ;
+    ] .

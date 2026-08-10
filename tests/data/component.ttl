@@ -1,0 +1,10 @@
+@prefix decomp: <http://www.w3.org/ns/lemon/decomp#> .
+@prefix ex:     <http://example.org/> .
+
+# COMPONENT_NO_ELEM
+ex:compA a decomp:Component ;
+    decomp:constituent ex:sub1 .
+
+# COMPONENT_MANY_ELEM
+ex:compB a decomp:Component ;
+    decomp:correspondsTo ex:x1, ex:x2 .

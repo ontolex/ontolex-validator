@@ -1,0 +1,6 @@
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix ex:      <http://example.org/> .
+
+# FORM_NO_REP
+ex:formA a ontolex:Form ;
+    ontolex:phoneticRep "kat"@en .

@@ -1,0 +1,9 @@
+@prefix lime: <http://www.w3.org/ns/lemon/lime#> .
+@prefix ex:   <http://example.org/> .
+
+# LEXICON_EMPTY, LEXICON_NO_LANG
+ex:lexA lime:linguisticCatalog ex:catalogA .
+
+# LEXICON_MANY_LANG
+ex:lexB lime:entry ex:entryB ;
+    lime:language "en", "fr" .

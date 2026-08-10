@@ -1,0 +1,11 @@
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix synsem:  <http://www.w3.org/ns/lemon/synsem#> .
+@prefix ex:      <http://example.org/> .
+
+# BOOL_NO_TYPE (untyped literal, but recognized as a valid boolean word)
+ex:argA a synsem:SyntacticArgument ;
+    synsem:optional "true" .
+
+# BOOL_BAD_VALUE (typed as boolean, but not a valid boolean value)
+ex:argB a synsem:SyntacticArgument ;
+    synsem:optional "maybe" .
