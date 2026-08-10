@@ -502,6 +502,10 @@ def main(argv):
                 validateLanguage(obj)
             else:
                 validateText(obj)
+        if pred == RDF.type and obj in (ontolex.LexicalEntry, ontolex.LexicalSense, ontolex.Form, decomp.Component, lime.Lexicon):
+            if subj not in checked:
+                validateLemonElement(g,types,subj)
+                checked[subj] = True
         if is_lemon_uri(pred):
             if subj not in checked:
                 validateLemonElement(g,types,subj)
