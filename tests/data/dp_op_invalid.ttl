@@ -1,20 +1,17 @@
 @prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
 @prefix ex:      <http://example.org/> .
 
-# DP_INVALID_OBJ is unreachable dead code in ontolex-validator.py (every
-# lemonDataProperty also has a lemonPropDomains entry, so the branch
-# that would raise it is never reached) and so is not exercised here;
-# see the comment in ontolex-shapes.ttl.
-#
-# OP_INVALID_OBJ *is* reachable, but only for lemon-namespaced
-# predicates with no entry in lemonPropDomains, such as ontolex:concept
-# (ontolex:sense, used below only to make entryA "checked", has a
-# domain entry and so would never trigger OP_INVALID_OBJ itself).
+# DP_INVALID_OBJ: a data property used with a non-literal (URI) object.
+ex:formA a ontolex:Form ;
+    ontolex:writtenRep ex:notALiteral .
+
+# OP_INVALID_OBJ: an object property used with a literal object. This
+# is now reachable even for common, domain-listed predicates like
+# ontolex:sense (previously only reachable for predicates with no
+# lemonPropDomains entry, e.g. ontolex:concept -- see the
+# ontolex-shapes.ttl comment / ontolex-validator#4).
 ex:entryA a ontolex:LexicalEntry ;
-    ontolex:canonicalForm ex:formA ;
-    ontolex:sense ex:senseA ;
-    ontolex:concept "not a URI" .
+    ontolex:canonicalForm ex:formB ;
+    ontolex:sense "not a URI" .
 
-ex:formA ontolex:writtenRep "a"@en .
-
-ex:senseA ontolex:reference ex:r1 .
+ex:formB ontolex:writtenRep "b"@en .

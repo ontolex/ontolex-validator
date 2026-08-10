@@ -32,10 +32,9 @@ errors/warnings/advisories, and each `sh:message` is prefixed with the
 same rule code (e.g. `ENTRY_NO_CAN_FORM`) the script prints.
 
 The file's header comment documents a handful of deliberate deviations
-from the python script's actual (sometimes buggy) behaviour -- e.g.
-`MULT_TYPES` and the dead `DP_INVALID_OBJ` check are not reproduced,
-since they either have no data-level meaning or can never fire in the
-original script.
+from the python script's actual behaviour -- e.g. `MULT_TYPES` is not
+reproduced, since it is a diagnostic about the python script's own
+type-inference confidence rather than a check on the RDF data.
 
 Because pySHACL needs its "advanced" SPARQL-based shapes support for
 several of these rules, validate with:

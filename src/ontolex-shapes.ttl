@@ -42,12 +42,8 @@
 #  - MULT_TYPES is not reproduced. It is a diagnostic about the python
 #    script's own type-inference confidence, not a check on the RDF
 #    data, so it has no direct SHACL equivalent.
-#  - DP_INVALID_OBJ is not reproduced: it is unreachable dead code in
-#    the original script (every lemonDataProperty also has a
-#    lemonPropDomains entry, so the branch that raises DP_INVALID_OBJ
-#    is never reached). OP_INVALID_OBJ *is* reproduced, but restricted
-#    to the same, much smaller set of predicates the original script
-#    actually reaches. See the comment before ":LemonSubjectShape" below.
+#  - DP_INVALID_OBJ / OP_INVALID_OBJ: see the comment before
+#    ":LemonDataPropertyObjectShape" below.
 #  - Elements whose inferred type is genuinely ambiguous in the python
 #    script (e.g. subjects of decomp:constituent, which can be either
 #    ontolex:LexicalEntry or decomp:Component and are disambiguated by
@@ -464,24 +460,74 @@
     ] .
 
 # NOTE: ontolex-validator.py's computeTypes() checks DP_INVALID_OBJ and
-# OP_INVALID_OBJ inside an if/elif chain:
+# OP_INVALID_OBJ per predicate/object pair, independently of the
+# domain/range type-inference lookup (see
+# https://github.com/ontolex/ontolex-validator/issues/4 and the PR that
+# closes it):
 #   if pred in lemonPropDomains: ct.add(...)
 #   elif pred in lexinfoProps: ct.add(...)
-#   elif pred in lemonDataProperties and not isinstance(obj, Literal): DP_INVALID_OBJ
+#   if pred in lemonDataProperties and not isinstance(obj, Literal): DP_INVALID_OBJ
 #   elif is_lemon_uri(pred) and pred not in lemonDataProperties and isinstance(obj, Literal): OP_INVALID_OBJ
-# Every single property in lemonDataProperties also has an entry in
-# lemonPropDomains, so the first `if` always wins for those predicates:
-# DP_INVALID_OBJ is unreachable dead code and is intentionally NOT
-# reproduced here (it can never fire in the original script, for any
-# input). OP_INVALID_OBJ is reachable, but only for lemon-namespaced
-# predicates that are NOT a key of lemonPropDomains (e.g. ontolex:concept,
-# ontolex:isDenotedBy, synsem:objOfProp, vartrans:source, or any
-# lemon-prefixed predicate the script doesn't otherwise recognise) --
-# the shape below excludes exactly the 62 lemonPropDomains keys rather
-# than the (unrelated) 16-item lemonDataProperties list.
+# DP_INVALID_OBJ fires for the 17 lemonDataProperties predicates when
+# used with a non-literal (URI/blank node) object; OP_INVALID_OBJ fires
+# for every other lemon-namespaced predicate when used with a literal
+# object. The two are mutually exclusive per triple (one requires the
+# predicate to be a data property, the other that it isn't), and also
+# mutually exclusive with the literal-specific checks in section 6-8
+# above (validateBoolLiteral/validateLanguage/validateText in the
+# python script are themselves only called when the object *is* a
+# Literal, at a separate point in main()'s triple loop).
 
 #####################################################################
-# 9. Object (non-data) lemon properties used with a literal object
+# 9. Data lemon properties used with a non-literal object
+#    (DP_INVALID_OBJ).
+#####################################################################
+
+:LemonDataPropertyObjectShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf
+        ontolex:writtenRep, ontolex:phoneticRep, ontolex:representation,
+        synsem:optional, lime:language, lime:avgSynonymy,
+        lime:avgNumOfLexicalizations, lime:links, lime:referenceDataset,
+        lime:concepts, lime:lexicalizations, lime:avgNumOfLinks,
+        lime:lexicalEntries, lime:conceptualizations, lime:percentage,
+        lime:avgAmbiguity, lime:references ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "DP_INVALID_OBJ: URI as object of a data property" ;
+        sh:severity sh:Violation ;
+        sh:select """
+            SELECT $this ?path ?value
+            WHERE {
+                $this ?path ?value .
+                FILTER (
+                    ?path IN (
+                        <http://www.w3.org/ns/lemon/ontolex#writtenRep>,
+                        <http://www.w3.org/ns/lemon/ontolex#phoneticRep>,
+                        <http://www.w3.org/ns/lemon/ontolex#representation>,
+                        <http://www.w3.org/ns/lemon/synsem#optional>,
+                        <http://www.w3.org/ns/lemon/lime#language>,
+                        <http://www.w3.org/ns/lemon/lime#avgSynonymy>,
+                        <http://www.w3.org/ns/lemon/lime#avgNumOfLexicalizations>,
+                        <http://www.w3.org/ns/lemon/lime#links>,
+                        <http://www.w3.org/ns/lemon/lime#referenceDataset>,
+                        <http://www.w3.org/ns/lemon/lime#concepts>,
+                        <http://www.w3.org/ns/lemon/lime#lexicalizations>,
+                        <http://www.w3.org/ns/lemon/lime#avgNumOfLinks>,
+                        <http://www.w3.org/ns/lemon/lime#lexicalEntries>,
+                        <http://www.w3.org/ns/lemon/lime#conceptualizations>,
+                        <http://www.w3.org/ns/lemon/lime#percentage>,
+                        <http://www.w3.org/ns/lemon/lime#avgAmbiguity>,
+                        <http://www.w3.org/ns/lemon/lime#references>
+                    )
+                    && !isLiteral(?value)
+                )
+            }
+        """ ;
+    ] .
+
+#####################################################################
+# 10. Object (non-data) lemon properties used with a literal object
 #    (OP_INVALID_OBJ). Target = any subject touching at least one
 #    lemon-namespaced predicate, mirroring the "subj not in checked"
 #    gate in main(), which then inspects every predicate of that
@@ -522,68 +568,23 @@
                       STRSTARTS(STR(?path), "http://www.w3.org/ns/lemon/lime#") )
                     &&
                     ?path NOT IN (
-                        <http://www.w3.org/ns/lemon/decomp#constituent>,
-                        <http://www.w3.org/ns/lemon/decomp#correspondsTo>,
-                        <http://www.w3.org/ns/lemon/decomp#subterm>,
-                        <http://www.w3.org/ns/lemon/lime#LexicalLinkset>,
-                        <http://www.w3.org/ns/lemon/lime#LexicalizationSet>,
-                        <http://www.w3.org/ns/lemon/lime#Lexicon>,
-                        <http://www.w3.org/ns/lemon/lime#avgAmbiguity>,
-                        <http://www.w3.org/ns/lemon/lime#avgNumOfLexicalizations>,
-                        <http://www.w3.org/ns/lemon/lime#avgNumOfLinks>,
-                        <http://www.w3.org/ns/lemon/lime#avgSynonymy>,
-                        <http://www.w3.org/ns/lemon/lime#concepts>,
-                        <http://www.w3.org/ns/lemon/lime#conceptualDataset>,
-                        <http://www.w3.org/ns/lemon/lime#conceptualizations>,
-                        <http://www.w3.org/ns/lemon/lime#entry>,
-                        <http://www.w3.org/ns/lemon/lime#language>,
-                        <http://www.w3.org/ns/lemon/lime#lexicalEntries>,
-                        <http://www.w3.org/ns/lemon/lime#lexicalizationModel>,
-                        <http://www.w3.org/ns/lemon/lime#lexicalizations>,
-                        <http://www.w3.org/ns/lemon/lime#lexiconDataset>,
-                        <http://www.w3.org/ns/lemon/lime#linguisticCatalog>,
-                        <http://www.w3.org/ns/lemon/lime#links>,
-                        <http://www.w3.org/ns/lemon/lime#partition>,
-                        <http://www.w3.org/ns/lemon/lime#percentage>,
-                        <http://www.w3.org/ns/lemon/lime#referenceDataset>,
-                        <http://www.w3.org/ns/lemon/lime#references>,
-                        <http://www.w3.org/ns/lemon/lime#resourceType>,
-                        <http://www.w3.org/ns/lemon/ontolex#ConceptSet>,
-                        <http://www.w3.org/ns/lemon/ontolex#LexicalEntry>,
-                        <http://www.w3.org/ns/lemon/ontolex#LexicalSense>,
-                        <http://www.w3.org/ns/lemon/ontolex#canonicalForm>,
-                        <http://www.w3.org/ns/lemon/ontolex#denotes>,
-                        <http://www.w3.org/ns/lemon/ontolex#evokes>,
-                        <http://www.w3.org/ns/lemon/ontolex#isConceptOf>,
-                        <http://www.w3.org/ns/lemon/ontolex#isEvokedBy>,
-                        <http://www.w3.org/ns/lemon/ontolex#isLexicalizedSenseOf>,
-                        <http://www.w3.org/ns/lemon/ontolex#isSenseOf>,
-                        <http://www.w3.org/ns/lemon/ontolex#lexicalForm>,
-                        <http://www.w3.org/ns/lemon/ontolex#lexicalizedSense>,
-                        <http://www.w3.org/ns/lemon/ontolex#morphologicalPattern>,
-                        <http://www.w3.org/ns/lemon/ontolex#otherForm>,
-                        <http://www.w3.org/ns/lemon/ontolex#phoneticRep>,
-                        <http://www.w3.org/ns/lemon/ontolex#reference>,
-                        <http://www.w3.org/ns/lemon/ontolex#representation>,
-                        <http://www.w3.org/ns/lemon/ontolex#sense>,
-                        <http://www.w3.org/ns/lemon/ontolex#usage>,
                         <http://www.w3.org/ns/lemon/ontolex#writtenRep>,
-                        <http://www.w3.org/ns/lemon/synsem#OntoMap>,
-                        <http://www.w3.org/ns/lemon/synsem#condition>,
-                        <http://www.w3.org/ns/lemon/synsem#marker>,
-                        <http://www.w3.org/ns/lemon/synsem#ontoCorrespondence>,
-                        <http://www.w3.org/ns/lemon/synsem#ontoMapping>,
+                        <http://www.w3.org/ns/lemon/ontolex#phoneticRep>,
+                        <http://www.w3.org/ns/lemon/ontolex#representation>,
                         <http://www.w3.org/ns/lemon/synsem#optional>,
-                        <http://www.w3.org/ns/lemon/synsem#submap>,
-                        <http://www.w3.org/ns/lemon/synsem#synArg>,
-                        <http://www.w3.org/ns/lemon/synsem#synBehavior>,
-                        <http://www.w3.org/ns/lemon/vartrans#category>,
-                        <http://www.w3.org/ns/lemon/vartrans#conceptRel>,
-                        <http://www.w3.org/ns/lemon/vartrans#lexicalRel>,
-                        <http://www.w3.org/ns/lemon/vartrans#relates>,
-                        <http://www.w3.org/ns/lemon/vartrans#senseRel>,
-                        <http://www.w3.org/ns/lemon/vartrans#trans>,
-                        <http://www.w3.org/ns/lemon/vartrans#translatableAs>
+                        <http://www.w3.org/ns/lemon/lime#language>,
+                        <http://www.w3.org/ns/lemon/lime#avgSynonymy>,
+                        <http://www.w3.org/ns/lemon/lime#avgNumOfLexicalizations>,
+                        <http://www.w3.org/ns/lemon/lime#links>,
+                        <http://www.w3.org/ns/lemon/lime#referenceDataset>,
+                        <http://www.w3.org/ns/lemon/lime#concepts>,
+                        <http://www.w3.org/ns/lemon/lime#lexicalizations>,
+                        <http://www.w3.org/ns/lemon/lime#avgNumOfLinks>,
+                        <http://www.w3.org/ns/lemon/lime#lexicalEntries>,
+                        <http://www.w3.org/ns/lemon/lime#conceptualizations>,
+                        <http://www.w3.org/ns/lemon/lime#percentage>,
+                        <http://www.w3.org/ns/lemon/lime#avgAmbiguity>,
+                        <http://www.w3.org/ns/lemon/lime#references>
                     )
                     && isLiteral(?value)
                 )
@@ -592,7 +593,7 @@
     ] .
 
 #####################################################################
-# 10. NOT_LEMON_URI: any IRI in a lemon namespace that is not part of
+# 11. NOT_LEMON_URI: any IRI in a lemon namespace that is not part of
 #     the fixed, known vocabulary (lemonURIs in ontolex-validator.py)
 #     is an error, wherever it appears (subject, predicate or object).
 #####################################################################
@@ -733,7 +734,7 @@
     ] .
 
 #####################################################################
-# 11. BNODE: blank node subject used with a predicate other than
+# 12. BNODE: blank node subject used with a predicate other than
 #     rdf:first/rdf:rest (i.e. not a plain RDF list cell).
 #####################################################################
 
@@ -766,7 +767,7 @@
     ] .
 
 #####################################################################
-# 12. UNRECOGNIZED: a triple whose predicate is not in a lemon
+# 13. UNRECOGNIZED: a triple whose predicate is not in a lemon
 #     namespace, not RDF/RDFS/OWL/lexinfo, and not declared as an
 #     owl:AnnotationProperty.
 #####################################################################
