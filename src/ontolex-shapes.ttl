@@ -26,19 +26,25 @@
 #
 # Known, deliberate deviations from the python script are documented
 # inline with "NOTE:" comments; the most important ones are:
-#  - A rdf:type declaration alone never triggers validation in
+#  - An element that is only ever the OBJECT of some property (never
+#    the subject of any ontolex/synsem/decomp/vartrans/lime property,
+#    and never given an explicit rdf:type) is never validated in
 #    ontolex-validator.py: main() only calls validateLemonElement() for
-#    a subject the first time it sees that subject used with an
-#    is_lemon_uri() predicate (i.e. an actual ontolex/synsem/decomp/
-#    vartrans/lime property triple, never rdf:type itself). Explicit
-#    rdf:type triples are folded in afterwards, inside computeTypes(),
-#    but only for subjects that already qualified some other way. The
-#    five class shapes below reproduce this with a sh:target requiring
-#    EITHER `?this a <Class>` OR ?this being object of one of the
-#    class's unambiguous range properties, PLUS (for both of those)
-#    at least one lemon-namespaced triple with ?this as subject
-#    somewhere in the graph; domain properties (sh:targetSubjectsOf)
-#    always satisfy that second condition trivially and are left as-is.
+#    a subject once it has seen that subject either (a) used as the
+#    subject of a triple with an is_lemon_uri() predicate, or (b) given
+#    an explicit rdf:type naming one of the five classes
+#    validateLemonElement() dispatches on -- see
+#    https://github.com/ontolex/ontolex-validator/issues/5 and the PR
+#    that closed it. The five class shapes below reproduce this: the
+#    `?this a <Class>` branch of each sh:target is ungated (case (b)
+#    above always qualifies on its own), while the "range-inferred"
+#    branches (?this being the object of one of the class's
+#    unambiguous range properties, without its own rdf:type) still
+#    require ?this to ALSO be the subject of some lemon-namespaced
+#    triple elsewhere in the graph, via a FILTER EXISTS -- being merely
+#    the object of a property never satisfies case (a) above. Domain
+#    properties (sh:targetSubjectsOf) always satisfy case (a) trivially
+#    and are left as-is.
 #  - MULT_TYPES is not reproduced. It is a diagnostic about the python
 #    script's own type-inference confidence, not a check on the RDF
 #    data, so it has no direct SHACL equivalent.
@@ -58,11 +64,12 @@
 
 :LexicalEntryShape
     a sh:NodeShape ;
-    # rdf:type declarations and range-inferred candidates only count if
-    # ?this is *also* the subject of some lemon-namespaced triple
-    # elsewhere (the "checked" gate in main()); domain-inferred
-    # candidates (sh:targetSubjectsOf below) always satisfy that gate
-    # trivially and so are left ungated.
+    # An explicit rdf:type is checked on its own (case (b), ungated).
+    # Range-inferred candidates only count if ?this is *also* the
+    # subject of some lemon-namespaced triple elsewhere (case (a), the
+    # "checked" gate in main()); domain-inferred candidates
+    # (sh:targetSubjectsOf below) always satisfy case (a) trivially and
+    # so are left ungated too.
     sh:target [
         a sh:SPARQLTarget ;
         sh:select """
@@ -71,29 +78,31 @@
                 {
                     ?this a <http://www.w3.org/ns/lemon/ontolex#LexicalEntry> .
                 } UNION {
-                    ?s1 <http://www.w3.org/ns/lemon/ontolex#isDenotedBy> ?this .
-                } UNION {
-                    ?s2 <http://www.w3.org/ns/lemon/ontolex#isSenseOf> ?this .
-                } UNION {
-                    ?s3 <http://www.w3.org/ns/lemon/ontolex#isEvokedBy> ?this .
-                } UNION {
-                    ?s4 <http://www.w3.org/ns/lemon/vartrans#translatableAs> ?this .
-                } UNION {
-                    ?s5 <http://www.w3.org/ns/lemon/vartrans#lexicalRel> ?this .
-                } UNION {
-                    ?s6 <http://www.w3.org/ns/lemon/decomp#subterm> ?this .
-                } UNION {
-                    ?s7 <http://www.w3.org/ns/lemon/lime#entry> ?this .
-                }
-                FILTER EXISTS {
-                    ?this ?lp ?lo .
-                    FILTER (
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
-                    )
+                    {
+                        ?s1 <http://www.w3.org/ns/lemon/ontolex#isDenotedBy> ?this .
+                    } UNION {
+                        ?s2 <http://www.w3.org/ns/lemon/ontolex#isSenseOf> ?this .
+                    } UNION {
+                        ?s3 <http://www.w3.org/ns/lemon/ontolex#isEvokedBy> ?this .
+                    } UNION {
+                        ?s4 <http://www.w3.org/ns/lemon/vartrans#translatableAs> ?this .
+                    } UNION {
+                        ?s5 <http://www.w3.org/ns/lemon/vartrans#lexicalRel> ?this .
+                    } UNION {
+                        ?s6 <http://www.w3.org/ns/lemon/decomp#subterm> ?this .
+                    } UNION {
+                        ?s7 <http://www.w3.org/ns/lemon/lime#entry> ?this .
+                    }
+                    FILTER EXISTS {
+                        ?this ?lp ?lo .
+                        FILTER (
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
+                        )
+                    }
                 }
             }
         """ ;
@@ -147,25 +156,27 @@
                 {
                     ?this a <http://www.w3.org/ns/lemon/ontolex#LexicalSense> .
                 } UNION {
-                    ?s1 <http://www.w3.org/ns/lemon/ontolex#lexicalizedSense> ?this .
-                } UNION {
-                    ?s2 <http://www.w3.org/ns/lemon/ontolex#isLexicalizedSenseOf> ?this .
-                } UNION {
-                    ?s3 <http://www.w3.org/ns/lemon/vartrans#senseRel> ?this .
-                } UNION {
-                    ?s4 <http://www.w3.org/ns/lemon/ontolex#sense> ?this .
-                } UNION {
-                    ?s5 <http://www.w3.org/ns/lemon/synsem#ontoMapping> ?this .
-                }
-                FILTER EXISTS {
-                    ?this ?lp ?lo .
-                    FILTER (
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
-                    )
+                    {
+                        ?s1 <http://www.w3.org/ns/lemon/ontolex#lexicalizedSense> ?this .
+                    } UNION {
+                        ?s2 <http://www.w3.org/ns/lemon/ontolex#isLexicalizedSenseOf> ?this .
+                    } UNION {
+                        ?s3 <http://www.w3.org/ns/lemon/vartrans#senseRel> ?this .
+                    } UNION {
+                        ?s4 <http://www.w3.org/ns/lemon/ontolex#sense> ?this .
+                    } UNION {
+                        ?s5 <http://www.w3.org/ns/lemon/synsem#ontoMapping> ?this .
+                    }
+                    FILTER EXISTS {
+                        ?this ?lp ?lo .
+                        FILTER (
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
+                        )
+                    }
                 }
             }
         """ ;
@@ -198,21 +209,23 @@
                 {
                     ?this a <http://www.w3.org/ns/lemon/ontolex#Form> .
                 } UNION {
-                    ?s1 <http://www.w3.org/ns/lemon/ontolex#canonicalForm> ?this .
-                } UNION {
-                    ?s2 <http://www.w3.org/ns/lemon/ontolex#otherForm> ?this .
-                } UNION {
-                    ?s3 <http://www.w3.org/ns/lemon/ontolex#lexicalForm> ?this .
-                }
-                FILTER EXISTS {
-                    ?this ?lp ?lo .
-                    FILTER (
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
-                    )
+                    {
+                        ?s1 <http://www.w3.org/ns/lemon/ontolex#canonicalForm> ?this .
+                    } UNION {
+                        ?s2 <http://www.w3.org/ns/lemon/ontolex#otherForm> ?this .
+                    } UNION {
+                        ?s3 <http://www.w3.org/ns/lemon/ontolex#lexicalForm> ?this .
+                    }
+                    FILTER EXISTS {
+                        ?this ?lp ?lo .
+                        FILTER (
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
+                        )
+                    }
                 }
             }
         """ ;
@@ -248,17 +261,19 @@
                 {
                     ?this a <http://www.w3.org/ns/lemon/decomp#Component> .
                 } UNION {
-                    ?s1 <http://www.w3.org/ns/lemon/decomp#constituent> ?this .
-                }
-                FILTER EXISTS {
-                    ?this ?lp ?lo .
-                    FILTER (
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
-                    )
+                    {
+                        ?s1 <http://www.w3.org/ns/lemon/decomp#constituent> ?this .
+                    }
+                    FILTER EXISTS {
+                        ?this ?lp ?lo .
+                        FILTER (
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
+                        )
+                    }
                 }
             }
         """ ;
@@ -291,17 +306,19 @@
                 {
                     ?this a <http://www.w3.org/ns/lemon/lime#Lexicon> .
                 } UNION {
-                    ?s1 <http://www.w3.org/ns/lemon/lime#lexiconDataset> ?this .
-                }
-                FILTER EXISTS {
-                    ?this ?lp ?lo .
-                    FILTER (
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
-                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
-                    )
+                    {
+                        ?s1 <http://www.w3.org/ns/lemon/lime#lexiconDataset> ?this .
+                    }
+                    FILTER EXISTS {
+                        ?this ?lp ?lo .
+                        FILTER (
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
+                            STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
+                        )
+                    }
                 }
             }
         """ ;

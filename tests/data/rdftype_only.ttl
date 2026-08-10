@@ -1,0 +1,19 @@
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix decomp:  <http://www.w3.org/ns/lemon/decomp#> .
+@prefix lime:    <http://www.w3.org/ns/lemon/lime#> .
+@prefix ex:      <http://example.org/> .
+
+# Each of these elements is declared only via rdf:type, with no other
+# lemon property of its own -- previously never validated at all
+# (ontolex-validator#5); now expected to be checked like any other
+# element of that type.
+
+ex:entry1 a ontolex:LexicalEntry .
+
+ex:sense1 a ontolex:LexicalSense .
+
+ex:form1 a ontolex:Form .
+
+ex:comp1 a decomp:Component .
+
+ex:lex1 a lime:Lexicon .
