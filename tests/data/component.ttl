@@ -1,14 +1,10 @@
-@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
-@prefix decomp:  <http://www.w3.org/ns/lemon/decomp#> .
-@prefix ex:      <http://example.org/> .
+@prefix decomp: <http://www.w3.org/ns/lemon/decomp#> .
+@prefix ex:     <http://example.org/> .
 
 # COMPONENT_NO_ELEM
-# (validateComponent() in ontolex-validator.py checks ontolex:correspondsTo,
-#  not decomp:correspondsTo -- reproduced here on purpose, see ontolex-shapes.ttl)
 ex:compA a decomp:Component ;
-    decomp:correspondsTo ex:x1 .
+    decomp:constituent ex:sub1 .
 
 # COMPONENT_MANY_ELEM
 ex:compB a decomp:Component ;
-    decomp:correspondsTo ex:x2 ;
-    ontolex:correspondsTo ex:y1, ex:y2 .
+    decomp:correspondsTo ex:x1, ex:x2 .

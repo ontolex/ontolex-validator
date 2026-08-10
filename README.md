@@ -33,9 +33,9 @@ same rule code (e.g. `ENTRY_NO_CAN_FORM`) the script prints.
 
 The file's header comment documents a handful of deliberate deviations
 from the python script's actual (sometimes buggy) behaviour -- e.g.
-`MULT_TYPES` and the dead `COMPONENT_NO_ELEM`/`COMPONENT_MANY_ELEM`/
-`DP_INVALID_OBJ` checks are not reproduced, since they either have no
-data-level meaning or can never fire in the original script.
+`MULT_TYPES` and the dead `DP_INVALID_OBJ` check are not reproduced,
+since they either have no data-level meaning or can never fire in the
+original script.
 
 Because pySHACL needs its "advanced" SPARQL-based shapes support for
 several of these rules, validate with:

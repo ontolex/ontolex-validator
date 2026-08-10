@@ -42,9 +42,6 @@
 #  - MULT_TYPES is not reproduced. It is a diagnostic about the python
 #    script's own type-inference confidence, not a check on the RDF
 #    data, so it has no direct SHACL equivalent.
-#  - decomp:Component validation (COMPONENT_NO_ELEM / COMPONENT_MANY_ELEM)
-#    is not reproduced at all: it is unreachable dead code in the
-#    original script. See the comment at "4. decomp:Component" below.
 #  - DP_INVALID_OBJ is not reproduced: it is unreachable dead code in
 #    the original script (every lemonDataProperty also has a
 #    lemonPropDomains entry, so the branch that raises DP_INVALID_OBJ
@@ -233,23 +230,56 @@
     ] .
 
 #####################################################################
-# 4. decomp:Component -- intentionally NOT implemented.
+# 4. decomp:Component
 #
-# validateLemonElement() in ontolex-validator.py dispatches to
-# validateComponent() (which is what checks COMPONENT_NO_ELEM /
-# COMPONENT_MANY_ELEM) with:
-#   if type == synsem.Component:
-#       validateComponent(g, types, elem)
-# but "synsem.Component" is never defined anywhere else in the script --
-# the actual component class is decomp:Component, a different URI in a
-# different namespace. Since decomp:Component can never equal
-# synsem:Component, this branch is dead: validateComponent() -- and
-# therefore COMPONENT_NO_ELEM / COMPONENT_MANY_ELEM -- can never fire,
-# for any input. (Separately, validateComponent() itself also checks
-# ontolex:correspondsTo rather than decomp:correspondsTo, a second,
-# moot bug given the first one.) No SHACL shape is provided for this
-# rule, to match the original script's actual (non-)behaviour.
+# validateComponent() (COMPONENT_NO_ELEM / COMPONENT_MANY_ELEM) used to
+# be unreachable dead code -- validateLemonElement() dispatched on
+# "type == synsem.Component", a class that is never defined anywhere in
+# the synsem namespace, instead of decomp.Component -- and
+# validateComponent() itself checked ontolex:correspondsTo rather than
+# decomp:correspondsTo. Both are fixed upstream; see
+# https://github.com/ontolex/ontolex-validator/issues/3 and the PR that
+# closes it. This shape reproduces the now-reachable behaviour.
 #####################################################################
+
+:ComponentShape
+    a sh:NodeShape ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:select """
+            SELECT DISTINCT ?this
+            WHERE {
+                {
+                    ?this a <http://www.w3.org/ns/lemon/decomp#Component> .
+                } UNION {
+                    ?s1 <http://www.w3.org/ns/lemon/decomp#constituent> ?this .
+                }
+                FILTER EXISTS {
+                    ?this ?lp ?lo .
+                    FILTER (
+                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/ontolex#") ||
+                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/synsem#") ||
+                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/decomp#") ||
+                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/vartrans#") ||
+                        STRSTARTS(STR(?lp), "http://www.w3.org/ns/lemon/lime#")
+                    )
+                }
+            }
+        """ ;
+    ] ;
+    sh:targetSubjectsOf decomp:correspondsTo ;
+    sh:property [
+        sh:path decomp:correspondsTo ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "COMPONENT_NO_ELEM: Component does not have an element" ;
+    ] ;
+    sh:property [
+        sh:path decomp:correspondsTo ;
+        sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "COMPONENT_MANY_ELEM: Component has more than one element" ;
+    ] .
 
 #####################################################################
 # 5. lime:Lexicon
