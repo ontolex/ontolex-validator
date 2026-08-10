@@ -287,7 +287,7 @@ def computeTypes(g,elem):
             ct.add(lemonPropDomains[pred])
         elif pred in lexinfoProps.keys():
             ct.add(lemonPropDomains[lexinfoProps[pred]])
-        elif pred in lemonDataProperties and not isinstance(obj,Literal):
+        if pred in lemonDataProperties and not isinstance(obj,Literal):
             err("DP_INVALID_OBJ","URI as object of " + pred)
         elif is_lemon_uri(pred) and pred not in lemonDataProperties and isinstance(obj,Literal):
             err("OP_INVALID_OBJ","Literal as object of " + pred)
