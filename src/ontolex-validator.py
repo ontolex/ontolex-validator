@@ -327,7 +327,7 @@ def validateLemonElement(g,types,elem):
             validateLexicalSense(g,types,elem)
         if type == ontolex.Form:
             validateForm(g,types,elem)
-        if type == synsem.Component:
+        if type == decomp.Component:
             validateComponent(g,types,elem)
         if type == lime.Lexicon:
             validateLexicon(g,types,elem)
@@ -361,7 +361,7 @@ def validateForm(g,types,elem):
         err("FORM_NO_REP","Form " + elem + " does not have a written representation")
 
 def validateComponent(g,types,elem):
-    ncomponents = leniter(g.objects(elem,ontolex.correspondsTo))
+    ncomponents = leniter(g.objects(elem,decomp.correspondsTo))
     if ncomponents == 0:
         warn("COMPONENT_NO_ELEM","Component " + elem + " does not have an element")
     if ncomponents > 1:
