@@ -1,0 +1,13 @@
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#> .
+@prefix lexinfo: <http://www.lexinfo.net/ontology/3.0/lexinfo#> .
+@prefix ex:      <http://example.org/> .
+
+# lexinfo:partOfSpeech here uses the current LexInfo 3.0 namespace.
+# The validator's lexinfo-recognition check is hardcoded to the LexInfo 2.0
+# namespace, so this predicate is (incorrectly) reported as UNRECOGNIZED.
+ex:entryA a ontolex:LexicalEntry ;
+    ontolex:canonicalForm ex:formA ;
+    lexinfo:partOfSpeech lexinfo:noun .
+
+ex:formA a ontolex:Form ;
+    ontolex:writtenRep "cat"@en .

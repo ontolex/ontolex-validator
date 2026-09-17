@@ -785,8 +785,8 @@
 
 #####################################################################
 # 13. UNRECOGNIZED: a triple whose predicate is not in a lemon
-#     namespace, not RDF/RDFS/OWL/lexinfo, and not declared as an
-#     owl:AnnotationProperty.
+#     namespace, not RDF/RDFS/OWL/lexinfo (2.0 or 3.0), and not declared
+#     as an owl:AnnotationProperty.
 #####################################################################
 
 :UnrecognizedTripleShape
@@ -816,7 +816,8 @@
                        STRSTARTS(STR(?path), "http://www.w3.org/1999/02/22-rdf-syntax-ns#") ||
                        STRSTARTS(STR(?path), "http://www.w3.org/2000/01/rdf-schema#") ||
                        STRSTARTS(STR(?path), "http://www.w3.org/2002/07/owl#") ||
-                       STRSTARTS(STR(?path), "http://www.lexinfo.net/ontology/2.0/lexinfo#") )
+                       STRSTARTS(STR(?path), "http://www.lexinfo.net/ontology/2.0/lexinfo#") ||
+                       STRSTARTS(STR(?path), "http://www.lexinfo.net/ontology/3.0/lexinfo#") )
                     &&
                     !EXISTS { ?path a <http://www.w3.org/2002/07/owl#AnnotationProperty> }
                 )
