@@ -20,6 +20,7 @@ endOfMessage = io.StringIO()
 outputFormat = "txt"
 
 lexinfo = Namespace("http://www.lexinfo.net/ontology/2.0/lexinfo#")
+lexinfo3 = Namespace("http://www.lexinfo.net/ontology/3.0/lexinfo#")
 ontolex = Namespace("http://www.w3.org/ns/lemon/ontolex#")
 synsem = Namespace("http://www.w3.org/ns/lemon/synsem#")
 decomp = Namespace("http://www.w3.org/ns/lemon/decomp#")
@@ -510,7 +511,7 @@ def main(argv):
             if subj not in checked:
                 validateLemonElement(g,types,subj)
                 checked[subj] = True
-        elif pred.startswith(str(RDF)) or pred.startswith(str(RDFS)) or pred.startswith(OWL) or pred.startswith(lexinfo):
+        elif pred.startswith(str(RDF)) or pred.startswith(str(RDFS)) or pred.startswith(OWL) or pred.startswith(lexinfo) or pred.startswith(lexinfo3):
             True
         elif pred in types.keys() and OWL.AnnotationProperty in types[pred]:
             True
