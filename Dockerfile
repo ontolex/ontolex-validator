@@ -1,5 +1,5 @@
 FROM ubuntu:latest
-MAINTAINER John McCrae <john@mccr.ae>
+LABEL maintainer="John McCrae <john@mccr.ae>"
 
 # Install apache, PHP, and supplimentary programs. openssh-server, curl, and lynx-cur are for debugging the container.
 RUN apt-get update && apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-get -y install \
@@ -11,4 +11,4 @@ RUN apt-get update && apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-g
 RUN a2enmod "$(basename "$(ls /etc/apache2/mods-available/php*.load)" .load)"
 COPY src/ /var/www/html/
 
-CMD /usr/sbin/apache2ctl -D FOREGROUND
+CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
