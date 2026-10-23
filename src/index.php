@@ -1,3 +1,4 @@
+<?php ob_start(); ?>
 <!DOCTYPE html>
 <html>
     <head>
@@ -8,16 +9,25 @@
         <!-- Bootstrap -->
         <link href="bootstrap.min.css" rel="stylesheet" media="screen">
         <link href="validator.css" rel="stylesheet" media="screen">
-        <script type="text/javascript" src="jquery-1.7.2.min.js"></script>
+        <script type="text/javascript" src="jquery-3.7.1.min.js"></script>
     </head>
     <body>
     <div class="container">
 <?php
 
 error_reporting(E_ALL);
-ini_set('display_errors', '1');
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
 
-if(array_key_exists('document',$_POST)) {
+// Upper bound on submitted document size (bytes) and validator run time (seconds)
+$MAX_DOCUMENT_SIZE = 1000000;
+$VALIDATOR_TIMEOUT = 30;
+
+if(array_key_exists('document',$_POST) && strlen($_POST['document']) > $MAX_DOCUMENT_SIZE) {
+    header('HTTP/1.0 413 Request Entity Too Large');
+    echo "<h1>413 Document too large</h1><p>Please submit a document of at most " . number_format($MAX_DOCUMENT_SIZE) . " bytes.</p>";
+    exit();
+} else if(array_key_exists('document',$_POST)) {
     $temp = tempnam("/tmp","lexicon");
 
     $out = fopen($temp,"w");
@@ -28,7 +38,7 @@ if(array_key_exists('document',$_POST)) {
     if($format != "xml" && $format != "turtle") {
         $format = "xml";
     }
-    $cmd = "python3 " . getcwd() . "/ontolex-validator.py -f$format -ohtml $temp";
+    $cmd = "timeout " . (int)$VALIDATOR_TIMEOUT . " python3 " . getcwd() . "/ontolex-validator.py -f$format -ohtml $temp";
     $descriptorspec = array(
         0 => array("pipe", "r"),
         1 => array("pipe", "w"),
@@ -54,7 +64,9 @@ if(array_key_exists('document',$_POST)) {
 <h3>Result</h3>
 <?php
         echo $content;
-        echo $errs;
+        if($errs !== '') {
+            echo "<pre>" . htmlspecialchars($errs) . "</pre>";
+        }
         fclose($pipes[1]);
     } else {
         header('HTTP/1.0 500 Internal Server Error');
